@@ -37,16 +37,15 @@ export function Support({ onClose }: SupportProps) {
           </div>
 
           <div className="p-8">
-            {/* Contact Methods */}
             <div className="grid md:grid-cols-3 gap-6 mb-12">
               <div className="bg-zinc-50 p-6 border border-zinc-200 text-center">
                 <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center mx-auto mb-4">
                   <Phone className="w-6 h-6 text-white" />
                 </div>
                 <h3 className="font-bold text-black mb-2">Teléfono</h3>
-                <p className="text-sm text-zinc-600 mb-3">Lun - Dom: 24/7</p>
+                <p className="text-sm text-zinc-600 mb-3">Lunes - Sabado <br /> 9:00 AM - 9:00 PM</p>
                 <a href="tel:+525555555555" className="text-black font-semibold hover:underline">
-                  +52 55 5555 5555
+                  +52 653 136 4464
                 </a>
               </div>
 
@@ -57,23 +56,11 @@ export function Support({ onClose }: SupportProps) {
                 <h3 className="font-bold text-black mb-2">Email</h3>
                 <p className="text-sm text-zinc-600 mb-3">Respuesta en 24h</p>
                 <a href="mailto:soporte@ticketx.com" className="text-black font-semibold hover:underline">
-                  soporte@ticketx.com
+                  soporte_ticketx@gmail.com
                 </a>
-              </div>
-
-              <div className="bg-zinc-50 p-6 border border-zinc-200 text-center">
-                <div className="w-12 h-12 bg-black rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MessageCircle className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="font-bold text-black mb-2">Chat en Vivo</h3>
-                <p className="text-sm text-zinc-600 mb-3">Lun - Vie: 9AM - 9PM</p>
-                <button className="text-black font-semibold hover:underline">
-                  Iniciar Chat
-                </button>
               </div>
             </div>
 
-            {/* Common Issues */}
             <div className="mb-12">
               <h2 className="text-2xl font-bold text-black mb-6 flex items-center gap-2">
                 <HelpCircle className="w-6 h-6" />
@@ -124,7 +111,6 @@ export function Support({ onClose }: SupportProps) {
               </div>
             </div>
 
-            {/* Hours */}
             <div className="bg-black text-white p-8 rounded-lg">
               <div className="flex items-start gap-4">
                 <Clock className="w-6 h-6 mt-1" />

@@ -16,7 +16,6 @@ export function Contact({ onClose }: ContactProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí iría la lógica para enviar el mensaje
     alert("Mensaje enviado exitosamente. Te responderemos pronto.");
     onClose();
   };
@@ -53,7 +52,6 @@ export function Contact({ onClose }: ContactProps) {
 
           <div className="p-8">
             <div className="grid md:grid-cols-2 gap-12">
-              {/* Contact Information */}
               <div>
                 <h2 className="text-2xl font-bold text-black mb-6">Información de Contacto</h2>
                 
@@ -127,7 +125,6 @@ export function Contact({ onClose }: ContactProps) {
                   </div>
                 </div>
 
-                {/* Office Hours */}
                 <div className="bg-zinc-100 p-6 rounded-lg">
                   <div className="flex items-start gap-3 mb-4">
                     <Clock className="w-6 h-6 mt-1" />
@@ -155,7 +152,6 @@ export function Contact({ onClose }: ContactProps) {
                 </div>
               </div>
 
-              {/* Contact Form */}
               <div>
                 <h2 className="text-2xl font-bold text-black mb-6">Envíanos un Mensaje</h2>
                 

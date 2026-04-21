@@ -9,7 +9,6 @@ import {
 } from "@stripe/react-stripe-js";
 import { X, Crown, Check, Sparkles, Star, Zap, Loader2, AlertCircle, CreditCard } from "lucide-react";
 
-// ── Inicializar Stripe ────────────────────────────────────────────
 const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
 
 if (!stripeKey) {
@@ -18,17 +17,14 @@ if (!stripeKey) {
 
 const stripePromise = stripeKey ? loadStripe(stripeKey) : Promise.resolve(null);
 
-// ── Tipos ─────────────────────────────────────────────────────────
 interface PremiumSubscriptionProps {
-  // Asegúrate de que tu interfaz CurrentUser incluya 'tipo'
   currentUser?: { id: number; nombre: string; email: string; tipo?: "Normal" | "Premium" } | null; 
   onClose: () => void;
   onSubscribe: () => void;
 }
 
-const LIFETIME_PRICE = 2990; // Precio único de por vida
+const LIFETIME_PRICE = 2990; 
 
-// ── Formulario de Pago de Stripe ──────────────────────────────────
 function StripePremiumForm({
   currentUser,
   onSuccess,
@@ -188,7 +184,6 @@ export function PremiumSubscription({ currentUser, onClose, onSubscribe }: Premi
         >
           {step === "offer" && (
             <>
-              {/* Header with gradient */}
               <div className="relative bg-gradient-to-br from-amber-500 via-yellow-500 to-orange-500 p-12 text-white overflow-hidden text-center">
                 <button
                   onClick={onClose}
@@ -216,7 +211,6 @@ export function PremiumSubscription({ currentUser, onClose, onSubscribe }: Premi
               </div>
 
               <div className="p-8 md:p-12">
-                {/* Benefits Grid */}
                 <div className="grid md:grid-cols-2 gap-6 mb-12">
                   {benefits.map((benefit, index) => (
                     <motion.div
@@ -236,7 +230,6 @@ export function PremiumSubscription({ currentUser, onClose, onSubscribe }: Premi
                   ))}
                 </div>
 
-                {/* ESTADO 1: Ya es Premium -> Solo mostramos mensaje de estado */}
                 {isAlreadyPremium ? (
                   <div className="text-center max-w-lg mx-auto bg-green-50 border border-green-200 rounded-xl p-8">
                     <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -251,7 +244,6 @@ export function PremiumSubscription({ currentUser, onClose, onSubscribe }: Premi
                     </p>
                   </div>
                 ) : (
-                  /* ESTADO 2: No es Premium -> Mostramos CTA de compra */
                   <div className="text-center max-w-lg mx-auto">
                     <div className="mb-6">
                       <span className="text-zinc-500 font-semibold uppercase tracking-wide text-sm">Acceso Vitalicio</span>
@@ -285,7 +277,6 @@ export function PremiumSubscription({ currentUser, onClose, onSubscribe }: Premi
             </>
           )}
 
-          {/* ... PASO 2 y PASO 3 de Stripe (payment y success) se mantienen igual ... */}
           {step === "payment" && clientSecret && (
             <div className="p-8 md:p-12">
               <div className="max-w-md mx-auto">

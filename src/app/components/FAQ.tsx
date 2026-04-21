@@ -163,7 +163,6 @@ export function FAQ({ onClose }: FAQProps) {
               </button>
             </div>
 
-            {/* Search */}
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400" />
               <input
@@ -230,7 +229,6 @@ export function FAQ({ onClose }: FAQProps) {
               </div>
             )}
 
-            {/* Contact Support */}
             <div className="mt-12 bg-zinc-100 p-8 text-center">
               <h3 className="text-xl font-bold text-black mb-2">¿No encontraste lo que buscabas?</h3>
               <p className="text-zinc-600 mb-4">

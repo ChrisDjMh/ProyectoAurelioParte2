@@ -50,23 +50,23 @@ const API = "http://localhost:3001/api/admin";
 export function AdminDashboard({ onClose }: AdminDashboardProps) {
   const [activeTab, setActiveTab] = useState<"overview" | "pendientes" | "usuarios">("overview");
 
-  // Stats
+
   const [stats, setStats] = useState<Stats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
 
-  // Pendientes
+
   const [pendientes, setPendientes] = useState<Organizador[]>([]);
   const [loadingPendientes, setLoadingPendientes] = useState(false);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [actionResult, setActionResult] = useState<{ id: number; ok: boolean; msg: string } | null>(null);
 
-  // Usuarios
+
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [organizadores, setOrganizadores] = useState<OrgAprobado[]>([]);
   const [loadingUsuarios, setLoadingUsuarios] = useState(false);
   const [searchUsuarios, setSearchUsuarios] = useState("");
 
-  // ── Fetch stats ──────────────────────────────────────────────
+  
   const fetchStats = useCallback(async () => {
     setLoadingStats(true);
     try {
@@ -80,7 +80,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
     }
   }, []);
 
-  // ── Fetch pendientes ─────────────────────────────────────────
+  
   const fetchPendientes = useCallback(async () => {
     setLoadingPendientes(true);
     try {
@@ -94,7 +94,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
     }
   }, []);
 
-  // ── Fetch usuarios ───────────────────────────────────────────
+  
   const fetchUsuarios = useCallback(async () => {
     setLoadingUsuarios(true);
     try {
@@ -117,7 +117,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
     if (activeTab === "usuarios") fetchUsuarios();
   }, [activeTab, fetchPendientes, fetchUsuarios]);
 
-  // ── Aprobar organizador ──────────────────────────────────────
+
   const handleAprobar = async (id: number) => {
     setActionLoading(id);
     setActionResult(null);
@@ -126,7 +126,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.mensaje);
       setActionResult({ id, ok: true, msg: "Organizador aprobado ✓" });
-      // Quitar de la lista y actualizar stats
+
       setPendientes((prev) => prev.filter((o) => o.id !== id));
       setStats((prev) => prev
         ? { ...prev, organizadores_pendientes: Math.max(0, prev.organizadores_pendientes - 1) }
@@ -139,7 +139,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
     }
   };
 
-  // ── Rechazar organizador ─────────────────────────────────────
+
   const handleRechazar = async (id: number) => {
     if (!confirm("¿Seguro que quieres rechazar y eliminar esta solicitud?")) return;
     setActionLoading(id);
@@ -161,7 +161,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
     }
   };
 
-  // ── Eliminar usuario ─────────────────────────────────────────
+
   const handleEliminarUsuario = async (id: number) => {
     if (!confirm("¿Seguro que quieres eliminar este usuario?")) return;
     try {
@@ -176,7 +176,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
     }
   };
 
-  // ── Filtro búsqueda usuarios ─────────────────────────────────
+
   const filteredUsuarios = usuarios.filter(
     (u) =>
       u.nombre.toLowerCase().includes(searchUsuarios.toLowerCase()) ||
@@ -206,7 +206,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
           className="max-w-7xl mx-auto bg-white rounded-xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Header */}
+         
           <div className="p-6 flex items-center justify-between bg-zinc-900 text-white">
             <div>
               <h1 className="text-3xl font-bold mb-1">Panel de Administración</h1>
@@ -226,7 +226,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
             </div>
           </div>
 
-          {/* Tabs */}
+         
           <div className="border-b border-zinc-200 px-6 bg-white">
             <div className="flex gap-8">
               {([
@@ -257,7 +257,7 @@ export function AdminDashboard({ onClose }: AdminDashboardProps) {
 
           <div className="p-6">
 
-            {/* ── TAB: RESUMEN ─────────────────────────────────────── */}
+           
             {activeTab === "overview" && (
               <div className="space-y-6">
                 {loadingStats ? (

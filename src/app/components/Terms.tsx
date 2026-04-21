@@ -37,7 +37,6 @@ export function Terms({ onClose }: TermsProps) {
           </div>
 
           <div className="p-8">
-            {/* Introduction */}
             <div className="mb-10">
               <div className="flex items-start gap-4 mb-6">
                 <FileText className="w-8 h-8 text-black flex-shrink-0" />
@@ -52,7 +51,6 @@ export function Terms({ onClose }: TermsProps) {
               </div>
             </div>
 
-            {/* Use of Service */}
             <div className="mb-10">
               <div className="flex items-start gap-4 mb-4">
                 <Scale className="w-6 h-6 text-black flex-shrink-0 mt-1" />
@@ -93,7 +91,6 @@ export function Terms({ onClose }: TermsProps) {
               </div>
             </div>
 
-            {/* Ticket Purchase */}
             <div className="mb-10">
               <div className="flex items-start gap-4 mb-4">
                 <CreditCard className="w-6 h-6 text-black flex-shrink-0 mt-1" />
@@ -139,7 +136,6 @@ export function Terms({ onClose }: TermsProps) {
               </div>
             </div>
 
-            {/* Cancellations and Refunds */}
             <div className="mb-10">
               <div className="flex items-start gap-4 mb-4">
                 <RefreshCw className="w-6 h-6 text-black flex-shrink-0 mt-1" />
@@ -176,7 +172,6 @@ export function Terms({ onClose }: TermsProps) {
               </div>
             </div>
 
-            {/* Event Access */}
             <div className="mb-10">
               <div className="flex items-start gap-4 mb-4">
                 <ShieldAlert className="w-6 h-6 text-black flex-shrink-0 mt-1" />
@@ -213,7 +208,6 @@ export function Terms({ onClose }: TermsProps) {
               </div>
             </div>
 
-            {/* Liability */}
             <div className="mb-10">
               <div className="flex items-start gap-4 mb-4">
                 <AlertCircle className="w-6 h-6 text-black flex-shrink-0 mt-1" />
@@ -238,7 +232,6 @@ export function Terms({ onClose }: TermsProps) {
               </div>
             </div>
 
-            {/* Intellectual Property */}
             <div className="mb-10">
               <div className="pl-0 space-y-3">
                 <h2 className="text-xl font-bold text-black">6. Propiedad Intelectual</h2>
@@ -250,7 +243,6 @@ export function Terms({ onClose }: TermsProps) {
               </div>
             </div>
 
-            {/* Changes to Terms */}
             <div className="mb-10">
               <div className="pl-0 space-y-3">
                 <h2 className="text-xl font-bold text-black">7. Modificaciones</h2>
@@ -262,7 +254,6 @@ export function Terms({ onClose }: TermsProps) {
               </div>
             </div>
 
-            {/* Governing Law */}
             <div className="mb-10">
               <div className="pl-0 space-y-3">
                 <h2 className="text-xl font-bold text-black">8. Ley Aplicable</h2>
@@ -273,7 +264,6 @@ export function Terms({ onClose }: TermsProps) {
               </div>
             </div>
 
-            {/* Termination */}
             <div className="mb-10">
               <div className="pl-0 space-y-3">
                 <h2 className="text-xl font-bold text-black">9. Terminación</h2>
@@ -285,7 +275,6 @@ export function Terms({ onClose }: TermsProps) {
               </div>
             </div>
 
-            {/* Contact */}
             <div className="bg-zinc-100 p-6 rounded-lg">
               <h2 className="text-xl font-bold text-black mb-3">Contacto Legal</h2>
               <p className="text-zinc-700 mb-4">
@@ -298,7 +287,6 @@ export function Terms({ onClose }: TermsProps) {
               </div>
             </div>
 
-            {/* Acceptance */}
             <div className="mt-8 bg-black text-white p-6 rounded-lg">
               <p className="text-center">
                 Al usar TicketX, reconoces que has leído, entendido y aceptas estar vinculado 

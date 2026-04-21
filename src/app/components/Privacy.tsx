@@ -37,7 +37,6 @@ export function Privacy({ onClose }: PrivacyProps) {
           </div>
 
           <div className="p-8">
-            {/* Introduction */}
             <div className="mb-10">
               <div className="flex items-start gap-4 mb-6">
                 <Shield className="w-8 h-8 text-black flex-shrink-0" />
@@ -52,7 +51,6 @@ export function Privacy({ onClose }: PrivacyProps) {
               </div>
             </div>
 
-            {/* Information We Collect */}
             <div className="mb-10">
               <div className="flex items-start gap-4 mb-4">
                 <Database className="w-6 h-6 text-black flex-shrink-0 mt-1" />
@@ -86,7 +84,6 @@ export function Privacy({ onClose }: PrivacyProps) {
               </div>
             </div>
 
-            {/* How We Use Information */}
             <div className="mb-10">
               <div className="flex items-start gap-4 mb-4">
                 <UserCheck className="w-6 h-6 text-black flex-shrink-0 mt-1" />
@@ -107,7 +104,6 @@ export function Privacy({ onClose }: PrivacyProps) {
               </div>
             </div>
 
-            {/* Data Sharing */}
             <div className="mb-10">
               <div className="flex items-start gap-4 mb-4">
                 <Eye className="w-6 h-6 text-black flex-shrink-0 mt-1" />
@@ -126,7 +122,6 @@ export function Privacy({ onClose }: PrivacyProps) {
               </div>
             </div>
 
-            {/* Data Security */}
             <div className="mb-10">
               <div className="flex items-start gap-4 mb-4">
                 <Lock className="w-6 h-6 text-black flex-shrink-0 mt-1" />
@@ -149,7 +144,6 @@ export function Privacy({ onClose }: PrivacyProps) {
               </div>
             </div>
 
-            {/* Your Rights */}
             <div className="mb-10">
               <div className="flex items-start gap-4 mb-4">
                 <Bell className="w-6 h-6 text-black flex-shrink-0 mt-1" />
@@ -174,7 +168,6 @@ export function Privacy({ onClose }: PrivacyProps) {
               </div>
             </div>
 
-            {/* Cookies */}
             <div className="mb-10">
               <div className="pl-0 space-y-3">
                 <h2 className="text-xl font-bold text-black">6. Cookies y Tecnologías Similares</h2>
@@ -186,7 +179,6 @@ export function Privacy({ onClose }: PrivacyProps) {
               </div>
             </div>
 
-            {/* Children's Privacy */}
             <div className="mb-10">
               <div className="pl-0 space-y-3">
                 <h2 className="text-xl font-bold text-black">7. Privacidad de Menores</h2>
@@ -198,7 +190,6 @@ export function Privacy({ onClose }: PrivacyProps) {
               </div>
             </div>
 
-            {/* Changes to Policy */}
             <div className="mb-10">
               <div className="pl-0 space-y-3">
                 <h2 className="text-xl font-bold text-black">8. Cambios a esta Política</h2>
@@ -210,7 +201,6 @@ export function Privacy({ onClose }: PrivacyProps) {
               </div>
             </div>
 
-            {/* Contact */}
             <div className="bg-zinc-100 p-6 rounded-lg">
               <h2 className="text-xl font-bold text-black mb-3">Contacto</h2>
               <p className="text-zinc-700 mb-4">

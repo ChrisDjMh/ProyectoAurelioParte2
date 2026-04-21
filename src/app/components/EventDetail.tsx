@@ -17,11 +17,13 @@ interface EventDetailProps {
     time: string;
     venue: string;
     tickets: number;
+    seatsioEventKey: string;
+    onGoToMyTickets?: () => void;
   };
   isPremiumUser?: boolean;
   currentUser?: { id: number; nombre: string; email: string } | null;
   onClose: () => void;
-  // NUEVO: Agregamos esta propiedad para llamar al modal de login
+
   onRequireLogin: () => void; 
   onPurchaseComplete?: (ticketData: {
     eventId: string;
@@ -34,30 +36,40 @@ interface EventDetailProps {
     seats: string[];
     totalPrice: string;
   }) => void;
+
+  onReservationCreated?: (ticketData: {
+    eventId: string;
+    eventTitle: string;
+    eventDate: string;
+    eventTime: string;
+    eventVenue: string;
+    eventLocation: string;
+    eventImage: string;
+    seats: string[];
+    totalPrice: string;
+  }) => void;
 }
+
+
 
 export function EventDetail({ 
   event, 
   isPremiumUser, 
   currentUser, 
   onClose, 
-  onRequireLogin, // Lo recibimos aquí
-  onPurchaseComplete 
+  onRequireLogin, 
+  onPurchaseComplete,
+  onReservationCreated,
+  onGoToMyTickets,
 }: EventDetailProps) {
   const [showPurchase, setShowPurchase] = useState(false);
 
-  // NUEVO: Función para validar sesión antes de comprar
   const handlePurchaseClick = () => {
     if (!currentUser) {
-      // Si no hay usuario, mandamos a llamar la función que abre tu LoginRegisterModal
       onRequireLogin();
-      // Opcional: Si quieres que el detalle del evento se cierre al abrir el login, 
-      // descomenta la siguiente línea:
-      // onClose(); 
       return;
     }
     
-    // Si hay usuario, procedemos a mostrar el modal de compra
     setShowPurchase(true);
   };
 
@@ -180,11 +192,14 @@ export function EventDetail({
             location: event.location,
             image: event.image,
             tickets: event.tickets,
+            seatsioEventKey: event.seatsioEventKey,
           }}
           isPremiumUser={isPremiumUser}
           currentUser={currentUser}
           onClose={() => setShowPurchase(false)}
           onPurchaseComplete={onPurchaseComplete}
+          onReservationCreated={onReservationCreated}
+          onGoToMyTickets={onGoToMyTickets}
         />
       )}
     </AnimatePresence>

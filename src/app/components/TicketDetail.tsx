@@ -30,31 +30,57 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
 
   const [safeImage, setSafeImage] = useState(ticket.eventImage); 
   
-  // Referencia al contenedor que vamos a "fotografiar"
+
   const ticketRef = useRef<HTMLDivElement>(null);
   
 
-  
+  const [isCanceling, setIsCanceling] = useState(false);
 
-  const handleCancelTicket = () => {
-    if (onCancelTicket) {
-      onCancelTicket(ticket.id);
-      onClose();
+  const handleCancelTicket = async () => {
+    setIsCanceling(true);
+    
+    try {
+      const res = await fetch("http://localhost:3001/api/pagos/cancelar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ticket_id: ticket.id,
+       
+          asientos: ticket.seats, 
+          evento_id: ticket.eventId 
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.mensaje || "Error al cancelar el boleto");
+
+
+      if (onCancelTicket) {
+        onCancelTicket(ticket.id);
+        onClose();
+      }
+    } catch (error: any) {
+      console.error("Error al cancelar:", error);
+      alert(error.message || "Hubo un problema al intentar cancelar el boleto.");
+    } finally {
+      setIsCanceling(false);
     }
   };
+
+  
 
 
   useEffect(() => {
     const fetchImageAsBase64 = async () => {
       try {
-        // Usamos un timestamp (Date.now) en el fetch para forzar una descarga fresca de internet
+      
         const proxyUrl = `https://wsrv.nl/?url=${encodeURIComponent(ticket.eventImage)}&t=${Date.now()}`;
         const response = await fetch(proxyUrl);
         const blob = await response.blob();
         
         const reader = new FileReader();
         reader.onloadend = () => {
-          setSafeImage(reader.result as string); // Se guarda como código puro
+          setSafeImage(reader.result as string); 
         };
         reader.readAsDataURL(blob);
       } catch (error) {
@@ -64,42 +90,36 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
     fetchImageAsBase64();
   }, [ticket.eventImage]);
 
-  // Función para descargar como PNG
+
   const handleDownload = async () => {
     if (!ticketRef.current) return;
     
     try {
-      // 1. Cambiamos el estado para que el botón diga "Procesando..."
+    
       setIsDownloading(true);
       
-      // 2. MAGIA: Pausamos la ejecución 150 milisegundos.
-      // Esto le da tiempo a React de actualizar el DOM y al modal de quedarse "quieto"
+
       await new Promise((resolve) => setTimeout(resolve, 150));
       
       const options = {
         quality: 1,
-        pixelRatio: 2, // Calidad HD
-        backgroundColor: '#ffffff', // Forzamos fondo blanco
-        cacheBust: true, // <--- ¡AQUÍ ESTÁ LA MAGIA! Esto obliga a borrar la memoria de la cámara
+        pixelRatio: 2, 
+        backgroundColor: '#ffffff',
+        cacheBust: true,
         style: {
-          // TRUCO PARA MODALES
           transform: 'none',
           boxShadow: 'none',
           margin: '0',
         },
         filter: (node: any) => {
-          // Ignoramos los botones
           return node.getAttribute ? node.getAttribute("data-hide") !== "true" : true;
         }
       };
 
-      // 3. Captura rápida de calentamiento (evita que faltsen fuentes/imágenes)
       await toPng(ticketRef.current, options);
       
-      // 4. Captura real y definitiva
       const dataUrl = await toPng(ticketRef.current, options);
       
-      // 5. Descarga
       const link = document.createElement("a");
       link.download = `Boleto-${ticket.eventTitle.replace(/\s+/g, '-')}.png`;
       link.href = dataUrl;
@@ -117,7 +137,7 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
     if (!ticketRef.current) return;
 
     try {
-      setIsDownloading(true); // Reusamos el estado de carga
+      setIsDownloading(true); 
       await new Promise((resolve) => setTimeout(resolve, 150));
 
       const options = {
@@ -133,16 +153,16 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
         filter: (node: any) => node.getAttribute ? node.getAttribute("data-hide") !== "true" : true
       };
 
-      // Calentamiento y captura (igual que en descarga, pero en formato Blob/Archivo)
+    
       await toBlob(ticketRef.current, options);
       const blob = await toBlob(ticketRef.current, options);
 
       if (!blob) throw new Error("No se pudo generar la imagen para compartir");
 
-      // Creamos un archivo real a partir de la foto
+
       const file = new File([blob], `Boleto-${ticket.eventTitle.replace(/\s+/g, '-')}.png`, { type: 'image/png' });
 
-      // Verificamos si el navegador soporta compartir archivos (Ej: Safari, Chrome en Android)
+      
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           title: `Mi boleto para ${ticket.eventTitle}`,
@@ -150,21 +170,21 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
           files: [file]
         });
       } 
-      // Plan B: Si no soporta archivos pero sí soporta compartir texto (algunos navegadores de PC)
+     
       else if (navigator.share) {
         await navigator.share({
           title: `Boleto para ${ticket.eventTitle}`,
           text: `¡Ya tengo mi boleto para ${ticket.eventTitle}! Será el ${ticket.eventDate} en ${ticket.eventVenue}.`
         });
       } 
-      // Plan C: Si es un navegador muy antiguo, copiamos al portapapeles
+    
       else {
         await navigator.clipboard.writeText(`¡Tengo mi boleto para ${ticket.eventTitle}! Será el ${ticket.eventDate} en ${ticket.eventVenue}.`);
         alert("¡Detalles del evento copiados al portapapeles!");
       }
 
     } catch (error: any) {
-      // Ignoramos el error si el usuario simplemente cerró el menú de compartir
+ 
       if (error.name !== 'AbortError') {
         console.error("Error al compartir:", error);
         alert("Hubo un problema al intentar compartir el boleto.");
@@ -191,21 +211,21 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
           className="max-w-2xl mx-auto bg-white relative"
           onClick={(e) => e.stopPropagation()}
           ref={ticketRef} 
-          key={ticket.id} // <--- ¡AQUÍ ESTÁ EL CAMBIO 1! Esto fuerza a recargar el diseño
+          key={ticket.id} 
         >
-          {/* Botón X - Lo ignoramos en la foto */}
+
           <button
             onClick={onClose}
-            data-hide="true" // <--- CAMBIO AQUÍ
+            data-hide="true" 
             className="absolute top-8 right-8 p-2 bg-white rounded-full hover:bg-zinc-100 transition-colors z-10 shadow-md"
           >
             <X className="w-6 h-6" />
           </button>
 
-          {/* Ticket Header */}
+ 
        <div className="relative aspect-[16/7] overflow-hidden bg-zinc-900">
             <ImageWithFallback
-              // 👇 ¡CAMBIO FINAL AQUÍ! Usamos la variable segura.
+            
               src={safeImage}
               alt={ticket.eventTitle}
               className="w-full h-full object-cover opacity-60"
@@ -221,7 +241,7 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
           </div>
 
           <div className="p-8">
-            {/* QR Code Section */}
+   
             <div className="flex justify-center mb-8 pb-8 border-b border-zinc-200">
               <div className="bg-white p-6 rounded-lg border-2 border-zinc-200">
                 <QRCode
@@ -236,7 +256,7 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
               </div>
             </div>
 
-            {/* Event Details */}
+  
             <div className="grid grid-cols-2 gap-6 mb-8 pb-8 border-b border-zinc-200">
               <div className="flex items-start gap-3">
                 <Calendar className="w-5 h-5 text-zinc-600 mt-1" />
@@ -264,7 +284,7 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
               </div>
             </div>
 
-            {/* Seat Information */}
+ 
             <div className="mb-8 pb-8 border-b border-zinc-200">
               <h3 className="font-semibold text-black mb-3">Asientos</h3>
               <div className="flex flex-wrap gap-2">
@@ -282,7 +302,7 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
               </p>
             </div>
 
-            {/* Purchase Info */}
+      
             <div className="mb-8">
               <div className="flex justify-between items-center mb-2">
                 <p className="text-sm text-zinc-600">Fecha de compra</p>
@@ -294,7 +314,7 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
               </div>
             </div>
 
-            {/* Actions - IGNORADOS AL DESCARGAR */}
+      
            <div data-hide="true">
               <div className="flex gap-3">
                 <button 
@@ -309,8 +329,8 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
                   )}
                 </button>
                 <button 
-                  onClick={handleShare} // <--- LLAMAMOS A LA FUNCIÓN AQUÍ
-                  disabled={isDownloading} // <--- LO DESACTIVAMOS MIENTRAS CARGA
+                  onClick={handleShare} 
+                  disabled={isDownloading} 
                   className="px-6 py-3 border-2 border-black text-black font-semibold hover:bg-zinc-50 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
                 >
                   {isDownloading ? (
@@ -321,7 +341,7 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
                 </button>
               </div>
 
-              {/* Cancel button */}
+           
               {onCancelTicket && !showCancelConfirm && (
                 <button
                   onClick={() => setShowCancelConfirm(true)}
@@ -332,7 +352,7 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
                 </button>
               )}
 
-              {/* Cancel confirmation */}
+     
               {showCancelConfirm && (
                 <div className="mt-6 p-6 bg-red-50 border-2 border-red-200 rounded-lg">
                   <div className="flex items-start gap-3 mb-4">
@@ -349,9 +369,14 @@ export function TicketDetail({ ticket, onClose, onCancelTicket }: TicketDetailPr
                   <div className="flex gap-3">
                     <button
                       onClick={handleCancelTicket}
-                      className="flex-1 px-6 py-3 bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors"
+                      disabled={isCanceling}
+                      className="flex-1 px-6 py-3 bg-red-600 text-white font-semibold hover:bg-red-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
                     >
-                      Sí, cancelar boleto
+                      {isCanceling ? (
+                        <><Loader2 className="w-5 h-5 animate-spin" /> Cancelando...</>
+                      ) : (
+                        "Sí, cancelar boleto"
+                      )}
                     </button>
                     <button
                       onClick={() => setShowCancelConfirm(false)}

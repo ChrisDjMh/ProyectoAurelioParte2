@@ -1,28 +1,26 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import {
-  X, Mail, Lock, User as UserIcon,
-  Building, Shield, AlertCircle, CheckCircle2
-} from "lucide-react";
+import { X, Mail, Lock, User as UserIcon, Building, Shield, Calculator, AlertCircle, CheckCircle2 } from "lucide-react";
+
 
 interface LoginRegisterModalProps {
   onClose: () => void;
   onLoginSuccess: (user: any) => void;
 }
 
-// Para nomas dejar emails con dominios oficiales
+
 const ALLOWED_DOMAINS = ["gmail.com", "outlook.com", "hotmail.com"];
 const isValidEmail = (email: string): boolean => {
   const domain = email.split("@")[1]?.toLowerCase();
   return ALLOWED_DOMAINS.includes(domain);
 };
 
-type UserRole = "usuarios" | "organizadores" | "administradores";
+type UserRole = "usuarios" | "organizadores"; 
 
 export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterModalProps) {
   const [isLogin, setIsLogin] = useState(true);
   const [userRole, setUserRole] = useState<UserRole>("usuarios");
-  const [loginSuccess, setLoginSuccess] = useState(false); // ✅ Estado para animación de éxito
+  const [loginSuccess, setLoginSuccess] = useState(false); 
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -42,7 +40,6 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
     setUserRole(role);
     setError("");
     setSuccessMsg("");
-    if (role === "administradores") setIsLogin(true);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -52,7 +49,7 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
   const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   const val = e.target.value;
   setFormData({ ...formData, email: val });
-  // Solo valida si ya escribieron el @ y algo después
+
   if (val.includes("@") && val.split("@")[1]?.length > 0) {
     setEmailError(!isValidEmail(val));
   } else {
@@ -65,7 +62,7 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
     setError("");
     setSuccessMsg("");
 
-    // ✅ Validación de dominio de correo
+
   if (!isValidEmail(formData.email)) {
     return setError("Solo se permiten correos de Gmail, Outlook o Hotmail");
   }
@@ -101,8 +98,8 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
 
         const normalizedRole =
           userRole === "usuarios" ? "usuario" :
-          userRole === "organizadores" ? "organizador" :
-          "administrador";
+          "organizador" 
+          ;
 
         const userData = {
           id: userFromDB.id,
@@ -114,13 +111,13 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
 
         localStorage.setItem("user", JSON.stringify(userData));
 
-        // ✅ Mostrar pantalla de éxito ANTES de cerrar
+
         setLoginSuccess(true);
 
-        // ✅ Esperar 1.2s, notificar al padre y cerrar
+
         setTimeout(() => {
           onLoginSuccess(userData);
-          // onClose() ya no es necesario porque onLoginSuccess lo maneja en App.tsx
+
         }, 1200);
 
       } else {
@@ -142,7 +139,6 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
   const getRoleIcon = () => {
     switch (userRole) {
       case "organizadores": return <Building className="w-6 h-6 text-white" />;
-      case "administradores": return <Shield className="w-6 h-6 text-white" />;
       default: return <UserIcon className="w-6 h-6 text-white" />;
     }
   };
@@ -150,7 +146,6 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
   const getRoleColor = () => {
     switch (userRole) {
       case "organizadores": return "bg-blue-600";
-      case "administradores": return "bg-red-600";
       default: return "bg-black";
     }
   };
@@ -158,7 +153,6 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
   const getRoleName = () => {
     switch (userRole) {
       case "organizadores": return "Organizador";
-      case "administradores": return "Administrador";
       default: return "Usuario";
     }
   };
@@ -180,7 +174,6 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
           className="max-w-md w-full bg-white relative rounded-xl shadow-2xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* ✅ Pantalla de éxito — se superpone al formulario */}
           <AnimatePresence>
             {loginSuccess && (
               <motion.div
@@ -213,7 +206,6 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
             )}
           </AnimatePresence>
 
-          {/* ── Botón cerrar ── */}
           <button
             onClick={onClose}
             className="absolute top-4 right-4 p-2 hover:bg-zinc-100 rounded-full transition-colors z-10"
@@ -222,7 +214,6 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
           </button>
 
           <div className="p-8">
-            {/* Header del modal */}
             <div className="flex items-center gap-3 mb-6">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors duration-300 ${getRoleColor()}`}>
                 {getRoleIcon()}
@@ -235,9 +226,8 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
               </div>
             </div>
 
-            {/* Selector de Roles */}
             <div className="flex gap-1 mb-6 bg-zinc-100 p-1 rounded-lg">
-              {(["usuarios", "organizadores", "administradores"] as UserRole[]).map((role) => (
+              {(["usuarios", "organizadores"] as UserRole[]).map((role) => (
                 <button
                   key={role}
                   onClick={() => handleRoleChange(role)}
@@ -247,19 +237,14 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
                       : "text-zinc-500 hover:text-black"
                   }`}
                 >
-                  {role === "usuarios" ? "Usuario" : role === "organizadores" ? "Organizador" : "Admin"}
-                </button>
+              {role === "usuarios"       ? "Usuario"      :
+                  "Organizador"  }
+              </button>
               ))}
             </div>
 
-            {/* Aviso para admin */}
-            {userRole === "administradores" && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-lg text-xs text-red-600 font-medium">
-                🔒 Acceso restringido. Solo administradores registrados.
-              </div>
-            )}
+           
 
-            {/* Mensajes */}
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg flex items-center gap-2 text-sm">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" /> {error}
@@ -271,7 +256,6 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
               </div>
             )}
 
-            {/* Formulario */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && userRole === "organizadores" && (
                 <div>
@@ -328,7 +312,7 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
       required
       name="email"
       value={formData.email}
-      onChange={handleEmailChange}   // ← usa el nuevo handler
+      onChange={handleEmailChange} 
       type="email"
       placeholder="ejemplo@gmail.com"
       className={`w-full pl-11 pr-4 py-3 border focus:outline-none rounded-lg text-sm transition-colors ${
@@ -338,7 +322,6 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
       }`}
     />
   </div>
-  {/* Mensaje inline bajo el input */}
   <AnimatePresence>
     {emailError && (
       <motion.p
@@ -398,7 +381,6 @@ export function LoginRegisterModal({ onClose, onLoginSuccess }: LoginRegisterMod
               </button>
             </form>
 
-            {/* Toggle login/registro */}
             {(userRole === "usuarios" || userRole === "organizadores") && (
               <div className="mt-6 text-center">
                 <button

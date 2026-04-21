@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { motion } from "motion/react";
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -7,12 +7,12 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import { X, User, Check, AlertCircle, Crown, Loader2, CreditCard } from "lucide-react";
+import { SeatsioSeatingChart } from "@seatsio/seatsio-react";
+import type { SeatingChart } from "@seatsio/seatsio-types";
+import { X, Check, AlertCircle, Crown, Loader2, CreditCard, User } from "lucide-react";
 
-// ── Inicializar Stripe (fuera del componente) ─────────────────────
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY || "");
 
-// ── Tipos (sin cambios) ───────────────────────────────────────────
 interface PurchaseModalProps {
   event: {
     id: string;
@@ -24,96 +24,40 @@ interface PurchaseModalProps {
     location?: string;
     image?: string;
     tickets: number;
+    seatsioEventKey?: string;
   };
   isPremiumUser?: boolean;
   currentUser?: { id: number; nombre: string; email: string } | null;
   onClose: () => void;
-  onPurchaseComplete?: (ticketData: {
-    eventId: string;
-    eventTitle: string;
-    eventDate: string;
-    eventTime: string;
-    eventVenue: string;
-    eventLocation: string;
-    eventImage: string;
-    seats: string[];
-    totalPrice: string;
-  }) => void;
+  onPurchaseComplete?: (ticketData: any) => void;
+  onReservationCreated?: (ticketData: any) => void;
+  initialStep?: "seats" | "payment";
+  existingOrderId?: number;
+  preselectedSeats?: string[];
+  onGoToMyTickets?: () => void; 
 }
 
-interface Seat {
-  id: string;
-  row: string;
-  number: number;
-  status: "available" | "occupied" | "selected";
-  isVIP: boolean;
+interface SeatsioObject {
+  label: string;
+  labels: { displayedLabel: string; own: string; parent?: string };
+  category?: { label: string; color: string; key: number };
+  pricing?: { price: number };
+  objectType: "Seat" | "GeneralAdmissionArea" | "Table" | "Booth";
 }
 
-const generateDynamicSeats = (capacity: number, occupiedList: string[]): Seat[] => {
-  const seats: Seat[] = [];
-  let seatsPerRow = 12;
-  if (capacity > 200) seatsPerRow = Math.ceil(capacity / 26);
-  const totalRows = Math.ceil(capacity / seatsPerRow);
-
-  const getRowLetter = (index: number) => {
-    let letter = "";
-    let temp = index;
-    while (temp >= 0) {
-      letter = String.fromCharCode(65 + (temp % 26)) + letter;
-      temp = Math.floor(temp / 26) - 1;
-    }
-    return letter;
-  };
-
-  let count = 0;
-  for (let r = 0; r < totalRows; r++) {
-    const rowLetter = getRowLetter(r);
-    const isVIP = r < 2;
-    for (let i = 1; i <= seatsPerRow; i++) {
-      if (count >= capacity) break;
-      const seatId = `${rowLetter}${i}`;
-      seats.push({
-        id: seatId, row: rowLetter, number: i,
-        status: occupiedList.includes(seatId) ? "occupied" : "available",
-        isVIP,
-      });
-      count++;
-    }
-  }
-  return seats;
-};
-
-// ── Formulario de pago Stripe ─────────────────────────────────────
-function StripePaymentForm({
-  totalPrice,
-  selectedSeats,
-  event,
-  currentUser,
-  ordenId,
-  onSuccess,
-  onError,
-}: {
-  totalPrice: number;
-  selectedSeats: Seat[];
-  event: PurchaseModalProps["event"];
-  currentUser: PurchaseModalProps["currentUser"];
-  ordenId: number;
-  onSuccess: () => void;
-  onError: (msg: string) => void;
-}) {
+function StripePaymentForm({ totalPrice, selectedSeats, currentUser, ordenId, onSuccess, onError }: any) {
   const stripe = useStripe();
   const elements = useElements();
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!stripe || !elements) return;
-
     setLoading(true);
     setErrorMsg("");
 
-    // Confirmar el pago con Stripe
     const { error, paymentIntent } = await stripe.confirmPayment({
       elements,
       redirect: "if_required",
@@ -127,7 +71,6 @@ function StripePaymentForm({
     }
 
     if (paymentIntent?.status === "succeeded") {
-      // Notificar al backend que confirme la orden
       try {
         const res = await fetch("http://localhost:3001/api/pagos/confirmar", {
           method: "POST",
@@ -146,19 +89,17 @@ function StripePaymentForm({
         onError(err.message);
       }
     }
-
     setLoading(false);
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Resumen */}
       <div className="bg-zinc-50 border border-zinc-200 p-5 rounded-lg">
         <h3 className="font-bold text-black mb-3">Resumen de compra</h3>
         <div className="flex flex-wrap gap-2 mb-3">
-          {selectedSeats.map((s) => (
-            <span key={s.id} className="px-3 py-1 bg-blue-600 text-white font-semibold text-sm rounded">
-              {s.id}
+          {selectedSeats.map((s: SeatsioObject) => (
+            <span key={s.label} className="px-3 py-1 bg-blue-600 text-white font-semibold text-sm rounded">
+              {s.labels.displayedLabel}
             </span>
           ))}
         </div>
@@ -168,7 +109,6 @@ function StripePaymentForm({
         </div>
       </div>
 
-      {/* Stripe Payment Element — renderiza tarjeta, OXXO, etc. */}
       <div className="border border-zinc-200 rounded-lg p-4">
         <PaymentElement />
       </div>
@@ -201,88 +141,147 @@ function StripePaymentForm({
   );
 }
 
-// ── Componente principal ──────────────────────────────────────────
-export function PurchaseModal({ event, isPremiumUser, currentUser, onClose, onPurchaseComplete }: PurchaseModalProps) {
-  const [seats, setSeats] = useState<Seat[]>([]);
-  const [loadingSeats, setLoadingSeats] = useState(true);
-  const [step, setStep] = useState<"seats" | "payment" | "confirmation" | "error">("seats");
+export function PurchaseModal({
+  event,
+  isPremiumUser,
+  currentUser,
+  onClose,
+  onPurchaseComplete,
+  onReservationCreated,
+  initialStep = "seats",
+  existingOrderId,
+  preselectedSeats,
+  onGoToMyTickets 
+}: PurchaseModalProps) {
 
-  // Estado Stripe
+  const chartRef = useRef<SeatingChart | null>(null);
+  const [selectedObjects, setSelectedObjects] = useState<SeatsioObject[]>([]);
+  const [holdToken, setHoldToken] = useState<string | null>(null);
+
+  const [step, setStep] = useState<"seats" | "payment" | "confirmation">(initialStep);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [ordenId, setOrdenId] = useState<number | null>(null);
+  const [ordenId, setOrdenId] = useState<number | null>(existingOrderId || null);
   const [loadingPayment, setLoadingPayment] = useState(false);
   const [paymentError, setPaymentError] = useState("");
+  const [selectionError, setSelectionError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchSeats = async () => {
-      try {
-        setLoadingSeats(true);
-        const res = await fetch(`http://localhost:3001/api/eventos/${event.id}/asientos-ocupados`);
-        const data = await res.json();
-        setSeats(generateDynamicSeats(data.capacidad, data.asientosOcupados));
-      } catch {
-        setSeats(generateDynamicSeats(event.tickets || 120, []));
-      } finally {
-        setLoadingSeats(false);
-      }
-    };
-    fetchSeats();
-  }, [event.id, event.tickets]);
+    useEffect(() => {
 
-  const selectedSeats = seats.filter((s) => s.status === "selected");
-  const totalSeats = selectedSeats.length;
+    if (initialStep === "payment" && !clientSecret) {
+      handleContinueToPayment();
+    }
+  }, []);
+
+  const displaySeats: SeatsioObject[] = preselectedSeats
+    ? preselectedSeats.map(id => ({ label: id, labels: { displayedLabel: id, own: id }, objectType: "Seat" } as SeatsioObject))
+    : selectedObjects;
+
+  const totalSeats = displaySeats.length;
   const pricePerSeat = parseFloat(event.price.replace(/[^0-9.]/g, ""));
   const totalPrice = totalSeats * pricePerSeat;
 
-  const toggleSeat = (seatId: string) => {
-    setSeats((prev) =>
-      prev.map((seat) => {
-        if (seat.id !== seatId || seat.status === "occupied") return seat;
-        if (seat.isVIP && !isPremiumUser) return seat;
-        return { ...seat, status: seat.status === "selected" ? "available" : "selected" };
-      })
-    );
+  const handleChartRendered = (chart: SeatingChart) => {
+    chartRef.current = chart;
   };
 
-  // Crear PaymentIntent al ir al pago
-  const handleContinueToPayment = async () => {
-    if (totalSeats === 0) return;
-    setLoadingPayment(true);
-    setPaymentError("");
+  const handleSessionInitialized = (token: { token: string }) => {
+    setHoldToken(token.token);
+  };
 
-    try {
-      const res = await fetch("http://localhost:3001/api/pagos/crear-intent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          evento_id: event.id,
-          usuario_id: currentUser?.id || 1,
-          asientos: selectedSeats.map((s) => s.id),
-          total: totalPrice,
-          email_usuario: currentUser?.email || "",
-        }),
-      });
+  const handleObjectSelected = async (object: any) => {
+  setSelectionError(null);
 
-      const text = await res.text();
-      let data: any;
-      try { data = JSON.parse(text); }
-      catch { throw new Error(`Error ${res.status} del servidor`); }
+  const isVipSeat = object.category?.label?.toUpperCase() === "VIP";
+  if (isVipSeat && !isPremiumUser) {
+    setSelectionError("Este asiento es VIP y requiere suscripción Premium.");
+    if (chartRef.current) chartRef.current.deselectObjects([object.label]);
+    return;
+  }
 
-      if (!res.ok) throw new Error(data.mensaje);
+  try {
+    const res = await fetch("http://localhost:3001/api/pagos/verificar", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        evento_id: event.id,
+        asiento_label: object.label,
+      }),
+    });
 
-      setClientSecret(data.clientSecret);
-      setOrdenId(data.orden_id);
-      setStep("payment");
-    } catch (err: any) {
-      setPaymentError(err.message);
-    } finally {
-      setLoadingPayment(false);
+    const data = await res.json();
+
+    if (data.ocupado) {
+      setSelectionError(
+        `El asiento ${object.labels.displayedLabel} ya está ocupado. Por favor elige otro.`
+      );
+      if (chartRef.current) chartRef.current.deselectObjects([object.label]);
+      return;
     }
+
+    if (data.sincronizado) {
+      console.info(`Asiento ${object.label} sincronizado: liberado en DB.`);
+    }
+  } catch (err) {
+    console.warn("No se pudo verificar el asiento contra la DB:", err);
+  }
+
+  refreshSelection();
+};
+
+  const refreshSelection = async () => {
+    if (!chartRef.current) return;
+    const objects = await chartRef.current.listSelectedObjects();
+    setSelectedObjects(objects as unknown as SeatsioObject[]);
   };
+
+  const handleContinueToPayment = async () => {
+  if (totalSeats === 0) return;
+  setLoadingPayment(true);
+  setPaymentError("");
+
+  try {
+    const res = await fetch("http://localhost:3001/api/pagos/crear-intent", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        evento_id: event.id,
+        usuario_id: currentUser?.id || 1,
+        asientos: displaySeats.map(s => s.label),
+        hold_token: holdToken,
+        total: totalPrice,
+        email_usuario: currentUser?.email || "",
+        orden_id: existingOrderId || null,  
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.mensaje);
+
+    setClientSecret(data.clientSecret);
+    setOrdenId(data.orden_id);
+
+    if (!existingOrderId && onReservationCreated) {
+      onReservationCreated({
+        id: `ORD-${data.orden_id}`,
+        eventId: event.id,
+        seats: displaySeats.map(s => s.label),
+        totalPrice: `$${totalPrice.toLocaleString()}`,
+        estado: "reservado",
+      });
+    }
+
+    setStep("payment");
+  } catch (err: any) {
+    setPaymentError(err.message);
+  } finally {
+    setLoadingPayment(false);
+  }
+};
 
   const handlePaymentSuccess = () => {
     if (onPurchaseComplete) {
       onPurchaseComplete({
+        id: existingOrderId ? `ORD-${existingOrderId}` : `ORD-${ordenId}`,
         eventId: event.id,
         eventTitle: event.title,
         eventDate: event.date,
@@ -290,26 +289,22 @@ export function PurchaseModal({ event, isPremiumUser, currentUser, onClose, onPu
         eventVenue: event.venue,
         eventLocation: event.location || "",
         eventImage: event.image || "",
-        seats: selectedSeats.map((s) => s.id),
+        seats: displaySeats.map(s => s.label),
         totalPrice: `$${totalPrice.toLocaleString()}`,
+        estado: "pagado",
       });
     }
     setStep("confirmation");
   };
 
-  const getSeatColor = (seat: Seat) => {
-    if (seat.isVIP) {
-      if (seat.status === "occupied") return "bg-zinc-400 border-zinc-400 cursor-not-allowed";
-      if (seat.status === "selected") return "bg-amber-500 border-amber-500 text-white shadow-lg";
-      if (!isPremiumUser) return "bg-amber-100 border-amber-300 cursor-not-allowed opacity-60";
-      return "bg-amber-100 border-amber-300 hover:bg-amber-200";
-    }
-    switch (seat.status) {
-      case "available": return "bg-zinc-100 hover:bg-blue-100 border-zinc-300 hover:border-blue-400";
-      case "occupied":  return "bg-zinc-400 border-zinc-400 cursor-not-allowed";
-      case "selected":  return "bg-blue-600 border-blue-600 text-white";
-    }
-  };
+  const seatsioCategories = isPremiumUser
+    ? [
+        { category: "vip",     price: pricePerSeat * 2 },
+        { category: "regular", price: pricePerSeat },
+      ]
+    : [
+        { category: "regular", price: pricePerSeat },
+      ];
 
   return (
     <motion.div
@@ -336,84 +331,64 @@ export function PurchaseModal({ event, isPremiumUser, currentUser, onClose, onPu
             </button>
           </div>
 
-          {/* ── PASO 1: Selección de asientos ── */}
           {step === "seats" && (
             <div className="p-6">
+              {!isPremiumUser && (
+                <div className="mb-4 bg-amber-50 border border-amber-200 p-4 rounded-lg flex items-start gap-3">
+                  <Crown className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-900">Asientos VIP exclusivos para Premium</p>
+                    <p className="text-xs text-amber-800 mt-0.5">Suscríbete a Premium para desbloquear los asientos VIP.</p>
+                  </div>
+                </div>
+              )}
+
+              {selectionError && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4 bg-red-50 border border-red-200 p-3 rounded-lg flex items-center gap-2 text-red-600 text-sm">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" /> 
+                  {selectionError}
+                </motion.div>
+              )}
+
               <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
-                  <h2 className="text-2xl font-bold text-black mb-6">Selecciona tus asientos</h2>
-                  <div className="bg-zinc-900 text-white text-center py-3 mb-8 font-semibold rounded">ESCENARIO</div>
-
-                  <div className="flex flex-wrap gap-4 mb-6 text-sm">
-                    {[
-                      { color: "bg-zinc-100 border-zinc-300", label: "Disponible" },
-                      { color: "bg-blue-600 border-blue-600", label: "Seleccionado" },
-                      { color: "bg-zinc-400 border-zinc-400", label: "Ocupado" },
-                      { color: "bg-amber-100 border-amber-300", label: "VIP", icon: true },
-                    ].map((item) => (
-                      <div key={item.label} className="flex items-center gap-2">
-                        <div className={`w-6 h-6 ${item.color} border-2 rounded`} />
-                        <span className="text-zinc-600 flex items-center gap-1">
-                          {item.icon && <Crown className="w-4 h-4 text-amber-600" />}
-                          {item.label}
-                        </span>
-                      </div>
-                    ))}
+                  <h2 className="text-2xl font-bold text-black mb-4">Selecciona tus asientos</h2>
+                  <div style={{ height: "500px" }}>
+                    <SeatsioSeatingChart
+                      workspaceKey={import.meta.env.VITE_SEATSIO_WORKSPACE_KEY}
+                      event={event.seatsioEventKey}
+                      region={import.meta.env.VITE_SEATSIO_REGION || "eu"}
+                      session="start"
+                      onSessionInitialized={handleSessionInitialized}
+                      onChartRendered={handleChartRendered}
+                      onObjectSelected={handleObjectSelected}
+                      onObjectDeselected={refreshSelection}
+                      pricing={seatsioCategories}
+                      priceFormatter={(price: number) => `$${price.toLocaleString()} MXN`}
+                      objectWithoutPricingSelectable={true}
+                      maxSelectedObjects={10}
+                      language="es"
+                    />
                   </div>
-
-                  {!isPremiumUser && (
-                    <div className="mb-6 bg-amber-50 border border-amber-200 p-4 rounded-lg flex items-start gap-3">
-                      <Crown className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-sm font-semibold text-amber-900">Asientos VIP exclusivos para Premium</p>
-                        <p className="text-xs text-amber-800 mt-0.5">Las filas A y B son VIP. Suscríbete a Premium para acceder.</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {loadingSeats ? (
-                    <div className="flex flex-col items-center py-16 text-zinc-400">
-                      <Loader2 className="w-10 h-10 animate-spin mb-4" />
-                      <p className="font-semibold">Cargando disponibilidad...</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3 overflow-x-auto pb-4">
-                      {Array.from(new Set(seats.map((s) => s.row))).map((row) => (
-                        <div key={row} className="flex items-center gap-2">
-                          <div className="w-8 font-bold text-black text-center flex-shrink-0">{row}</div>
-                          <div className="flex gap-2 min-w-max">
-                            {seats.filter((s) => s.row === row).map((seat) => (
-                              <button
-                                key={seat.id}
-                                onClick={() => toggleSeat(seat.id)}
-                                disabled={seat.status === "occupied"}
-                                className={`w-10 h-10 border-2 rounded transition-all font-semibold text-xs ${getSeatColor(seat)}`}
-                                title={`Asiento ${seat.id}`}
-                              >
-                                {seat.number}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
-                {/* Resumen lateral */}
                 <div className="lg:col-span-1">
                   <div className="sticky top-6 border border-zinc-200 p-6 rounded-lg">
                     <h3 className="text-xl font-bold text-black mb-4">Resumen</h3>
-                    {selectedSeats.length > 0 ? (
+
+                    {displaySeats.length > 0 ? (
                       <>
                         <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">
-                          {selectedSeats.map((seat) => (
-                            <div key={seat.id} className="flex items-center justify-between text-sm">
-                              <span className="font-semibold">Asiento {seat.id}</span>
-                              <button onClick={() => toggleSeat(seat.id)} className="text-red-600 text-xs font-semibold">Quitar</button>
+                          {displaySeats.map((seat) => (
+                            <div key={seat.label} className="flex items-center justify-between text-sm">
+                              <span className="font-semibold">{seat.labels.displayedLabel}</span>
+                              {seat.category && (
+                                <span className="text-xs text-zinc-500">{seat.category.label}</span>
+                              )}
                             </div>
                           ))}
                         </div>
+
                         <div className="border-t border-zinc-200 pt-3 space-y-2 mb-4 text-sm">
                           <div className="flex justify-between">
                             <span className="text-zinc-600">Tickets</span>
@@ -440,7 +415,8 @@ export function PurchaseModal({ event, isPremiumUser, currentUser, onClose, onPu
                         >
                           {loadingPayment
                             ? <><Loader2 className="w-4 h-4 animate-spin" /> Preparando pago...</>
-                            : "Continuar al pago"}
+                            : "Continuar al pago"
+                          }
                         </button>
                       </>
                     ) : (
@@ -455,37 +431,47 @@ export function PurchaseModal({ event, isPremiumUser, currentUser, onClose, onPu
             </div>
           )}
 
-          {/* ── PASO 2: Pago con Stripe ── */}
-          {step === "payment" && clientSecret && (
+          {step === "payment" && (
             <div className="p-6">
               <div className="max-w-2xl mx-auto">
-                <button onClick={() => setStep("seats")} className="mb-6 text-sm font-semibold text-zinc-600 hover:text-black">
-                  ← Volver a selección de asientos
-                </button>
+                {!preselectedSeats && (
+                  <button
+                    onClick={() => setStep("seats")}
+                    className="mb-6 text-sm font-semibold text-zinc-600 hover:text-black"
+                  >
+                    ← Volver a selección de asientos
+                  </button>
+                )}
                 <h2 className="text-2xl font-bold text-black mb-6">Pago seguro</h2>
 
-                <Elements
-                  stripe={stripePromise}
-                  options={{
-                    clientSecret,
-                    appearance: { theme: "stripe", variables: { colorPrimary: "#000" } },
-                  }}
-                >
-                  <StripePaymentForm
-                    totalPrice={totalPrice}
-                    selectedSeats={selectedSeats}
-                    event={event}
-                    currentUser={currentUser}
-                    ordenId={ordenId!}
-                    onSuccess={handlePaymentSuccess}
-                    onError={(msg) => setPaymentError(msg)}
-                  />
-                </Elements>
+                {loadingPayment ? (
+                  <div className="flex justify-center py-10">
+                    <Loader2 className="w-10 h-10 animate-spin text-zinc-400" />
+                  </div>
+                ) : clientSecret ? (
+                  <Elements
+                    stripe={stripePromise}
+                    options={{
+                      clientSecret,
+                      appearance: { theme: "stripe", variables: { colorPrimary: "#000" } },
+                    }}
+                  >
+                    <StripePaymentForm
+                      totalPrice={totalPrice}
+                      selectedSeats={displaySeats}
+                      currentUser={currentUser}
+                      ordenId={ordenId!}
+                      onSuccess={handlePaymentSuccess}
+                      onError={(msg: string) => setPaymentError(msg)}
+                    />
+                  </Elements>
+                ) : (
+                  <p className="text-red-500">{paymentError}</p>
+                )}
               </div>
             </div>
           )}
 
-          {/* ── PASO 3: Confirmación ── */}
           {step === "confirmation" && (
             <div className="p-6">
               <div className="max-w-2xl mx-auto text-center py-12">
@@ -499,27 +485,39 @@ export function PurchaseModal({ event, isPremiumUser, currentUser, onClose, onPu
                 <h2 className="text-4xl font-bold text-black mb-4">¡Compra exitosa!</h2>
                 <p className="text-xl text-zinc-600 mb-2">Tus tickets han sido confirmados.</p>
                 <p className="text-sm text-zinc-500 mb-8">
-                  Recibirás un email de confirmación con tus códigos QR en {currentUser?.email || "tu correo"}.
+                  Recibirás un email de confirmación con tus códigos QR en{" "}
+                  {currentUser?.email || "tu correo"}.
                 </p>
-
+                
                 <div className="bg-zinc-50 border border-zinc-200 p-6 rounded-lg mb-8 text-left">
-                  <h3 className="font-bold mb-3">Resumen</h3>
+                  <h3 className="font-bold mb-3">Resumen de la orden</h3>
                   <p className="text-sm text-zinc-600 mb-1"><strong>Evento:</strong> {event.title}</p>
                   <p className="text-sm text-zinc-600 mb-1"><strong>Fecha:</strong> {event.date} • {event.time}</p>
                   <p className="text-sm text-zinc-600 mb-3"><strong>Lugar:</strong> {event.venue}</p>
                   <div className="flex flex-wrap gap-2 mb-3">
-                    {selectedSeats.map((s) => (
-                      <span key={s.id} className="px-3 py-1 bg-black text-white font-semibold text-sm rounded">{s.id}</span>
+                    {displaySeats.map((s) => (
+                      <span key={s.label} className="px-3 py-1 bg-black text-white font-semibold text-sm rounded">
+                        {s.labels.displayedLabel}
+                      </span>
                     ))}
                   </div>
-                  <div className="flex justify-between font-bold border-t pt-3">
+                  <div className="flex justify-between font-bold border-t border-zinc-200 pt-3">
                     <span>Total pagado</span>
                     <span>${totalPrice.toLocaleString()} MXN</span>
                   </div>
                 </div>
 
-                <button onClick={onClose} className="w-full py-3 bg-black text-white font-semibold hover:bg-zinc-800 rounded-lg">
-                  Volver al inicio
+            
+                <button
+                  onClick={() => {
+                    onClose(); 
+                    if (onGoToMyTickets) {
+                      onGoToMyTickets(); 
+                    }
+                  }}
+                  className="w-full py-3 bg-black text-white font-semibold hover:bg-zinc-800 rounded-lg transition-colors"
+                >
+                  Ir a mis boletos
                 </button>
               </div>
             </div>
